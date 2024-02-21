@@ -20,7 +20,7 @@
 //std
 #include <set>
 
-namespace std {
+namespace tinyobj {
   inline bool operator<(const tinyobj::index_t &a,
                         const tinyobj::index_t &b)
   {
