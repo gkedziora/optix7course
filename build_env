@@ -1,0 +1,7 @@
+cmake -B build -DCMAKE_INSTALL_PREFIX=/home/gkedzior/optix7course \
+  -DCUDA_HOST_COMPILER=/usr/local/gcc123/bin/gcc \
+  -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
+  -DOptiX_INCLUDE=/home/gkedzior/NVIDIA-OptiX-SDK-8.0.0-linux64-x86_64/include \
+  -DOptiX_INSTALL_DIR=/home/gkedzior/NVIDIA-OptiX-SDK-8.0.0-linux64-x86_64/build \
+  -DCMAKE_CXX_COMPILER=/usr/local/gcc123/bin/g++ \
+  -DCMAKE_C_COMPILER=/usr/local/gcc123/bin/gcc
