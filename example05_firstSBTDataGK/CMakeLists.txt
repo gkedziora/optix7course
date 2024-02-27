@@ -20,7 +20,7 @@ include_directories(${OptiX_INCLUDE})
 
 cuda_compile_and_embed(embedded_ptx_code devicePrograms.cu)
 
-add_executable(ex05_firstSBTData
+add_executable(ex05_firstSBTDataGK
   ${embedded_ptx_code}
   optix7.h
   CUDABuffer.h
@@ -30,7 +30,7 @@ add_executable(ex05_firstSBTData
   main.cpp
   )
 
-target_link_libraries(ex05_firstSBTData
+target_link_libraries(ex05_firstSBTDataGK
   gdt
   # optix dependencies, for rendering
   ${optix_LIBRARY}

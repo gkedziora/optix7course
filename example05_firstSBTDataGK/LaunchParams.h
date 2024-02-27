@@ -42,7 +42,13 @@ namespace osc {
       vec3f vertical;
     } camera;
 
+    struct { 
+      float3 *hit_coord_buf;
+      vec2i size;
+    } world_hits;
+
     OptixTraversableHandle traversable;
+
   };
 
 } // ::osc

@@ -87,6 +87,7 @@ add_subdirectory(example03_inGLFWindow)
 
 add_subdirectory(example04_firstTriangleMesh)
 add_subdirectory(example05_firstSBTData)
+add_subdirectory(example05_firstSBTDataGK)
 add_subdirectory(example06_multipleObjects)
 add_subdirectory(example07_firstRealModel)
 add_subdirectory(example08_addingTextures)

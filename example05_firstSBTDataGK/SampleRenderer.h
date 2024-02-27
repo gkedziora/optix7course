@@ -71,6 +71,10 @@ namespace osc {
     /*! download the rendered color buffer */
     void downloadPixels(uint32_t h_pixels[]);
 
+    /*! print hit coordinates in world frame */
+    //void printHitCoords(float3 h_hitcrd[]);
+    void downloadHitCoords(float3* h_hitcrd);
+
     /*! set camera to render with */
     void setCamera(const Camera &camera);
   protected:
@@ -147,6 +151,7 @@ namespace osc {
     /*! @} */
 
     CUDABuffer colorBuffer;
+    CUDABuffer hit_coord_buf;
 
     /*! the camera we are to render with. */
     Camera lastSetCamera;

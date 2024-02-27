@@ -17,6 +17,8 @@
 #include "SampleRenderer.h"
 // this include may only appear in a single source file:
 #include <optix_function_table_definition.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "3rdParty/stb_image_write.h"
 
 /*! \namespace osc - Optix Siggraph Course */
 namespace osc {
@@ -130,6 +132,16 @@ namespace osc {
     // upload the model to the device: the builder
     vertexBuffer.alloc_and_upload(model.vertex);
     indexBuffer.alloc_and_upload(model.index);
+
+    //gk print out model here
+    int ivert=0;
+    for (const auto& v : model.vertex) {
+        std::cout << "gk: index = " << ivert << ": model.vertex = "<< v.x << ", " << v.y << ", " << v.z << "\n";
+        ivert++;
+    }
+    for (const auto& i : model.index) {
+        std::cout << "gk: model.index: " << i.x << ", " << i.y << ", " << i.z << "\n";
+    }
 
     OptixTraversableHandle asHandle { 0 };
 
@@ -315,7 +327,7 @@ namespace osc {
     pipelineCompileOptions = {};
     pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS;
     pipelineCompileOptions.usesMotionBlur     = false;
-    pipelineCompileOptions.numPayloadValues   = 2;
+    pipelineCompileOptions.numPayloadValues   = 5;
     pipelineCompileOptions.numAttributeValues = 2;
     pipelineCompileOptions.exceptionFlags     = OPTIX_EXCEPTION_FLAG_NONE;
     pipelineCompileOptions.pipelineLaunchParamsVariableName = "optixLaunchParams";
@@ -548,22 +560,30 @@ namespace osc {
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
+    std::cout << "gk: back from optixLaunch\n";
+    //sample.downloadHitCoords(hit_coords.data());
   }
 
   /*! set camera to render with */
   void SampleRenderer::setCamera(const Camera &camera)
   {
+    std::cout << "gk: in SR::setCamera\n";
     lastSetCamera = camera;
     launchParams.camera.position  = camera.from;
+    printf("gk: camera.position: %8.4f, %8.4f, %8.4f\n",camera.from.x,camera.from.y,camera.from.z);
     launchParams.camera.direction = normalize(camera.at-camera.from);
+    printf("gk: camera.direction: %8.4f, %8.4f, %8.4f\n",launchParams.camera.direction.x,launchParams.camera.direction.y,launchParams.camera.direction.z);
     const float cosFovy = 0.66f;
     const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
     launchParams.camera.horizontal
       = cosFovy * aspect * normalize(cross(launchParams.camera.direction,
                                            camera.up));
+    printf("gk: camera.horizontal: %8.4f, %8.4f, %8.4f\n",launchParams.camera.horizontal.x,launchParams.camera.horizontal.y,launchParams.camera.horizontal.z);
     launchParams.camera.vertical
       = cosFovy * normalize(cross(launchParams.camera.horizontal,
                                   launchParams.camera.direction));
+    printf("gk: camera.vertical: %8.4f, %8.4f, %8.4f\n",launchParams.camera.vertical.x,launchParams.camera.vertical.y,launchParams.camera.vertical.z);
+    std::cout << "gk: leaving SR::setCamera\n";
   }
 
   /*! resize frame buffer to given resolution */
@@ -573,22 +593,50 @@ namespace osc {
     if (newSize.x == 0 | newSize.y == 0) return;
 
     // resize our cuda frame buffer
+    std::cout << "gk: newSize.x = "<<newSize.x<<" newSize.y = "<<newSize.y<<"\n";
+    std::cout << "gk: calling colorBuffer.resize in SampleRenderer::resize\n";
     colorBuffer.resize(newSize.x*newSize.y*sizeof(uint32_t));
+    std::cout << "gk: back from colorBuffer.resize\n";
+    std::cout << "gk: newSize.x = "<<newSize.x<<" newSize.y = "<<newSize.y<<"\n";
 
     // update the launch parameters that we'll pass to the optix
     // launch:
     launchParams.frame.size  = newSize;
     launchParams.frame.colorBuffer = (uint32_t*)colorBuffer.d_pointer();
 
+    // gk: 
+    hit_coord_buf.resize(newSize.x*newSize.y*sizeof(float3));
+    launchParams.world_hits.size = newSize;
+    launchParams.world_hits.hit_coord_buf = (float3*) hit_coord_buf.d_pointer();
+
     // and re-set the camera, since aspect may have changed
+    std::cout << "gk: calling setCamera in SampleRenderer::resize\n";
     setCamera(lastSetCamera);
+    std::cout << "gk: backf from setCamera in SampleRenderer::resize\n";
   }
 
   /*! download the rendered color buffer */
   void SampleRenderer::downloadPixels(uint32_t h_pixels[])
   {
-    colorBuffer.download(h_pixels,
-                         launchParams.frame.size.x*launchParams.frame.size.y);
+      colorBuffer.download(h_pixels,
+                          launchParams.frame.size.x*launchParams.frame.size.y);
+      std::cout << "gk: saving png file in downloadPixels\n";
+      stbi_write_png("pixels.png",launchParams.frame.size.x,launchParams.frame.size.y,4,
+                     h_pixels,launchParams.frame.size.x*sizeof(uint32_t));
+  }
+
+  void SampleRenderer::downloadHitCoords(float3 h_hitcrd[])
+  {
+    hit_coord_buf.download(h_hitcrd,
+                         launchParams.world_hits.size.x*launchParams.world_hits.size.y);
+    std::cout << "gk: in SampleRenderer::downloadHitCoords\n";
+
+    for (int j=0; j< launchParams.world_hits.size.y; j++) {
+      for (int i=0; i< launchParams.world_hits.size.x; i++) {
+        float3 hcrd=h_hitcrd[i+j*launchParams.world_hits.size.x];
+        printf("hc: %8.4f, %8.4f, %8.4f\n", hcrd.x, hcrd.y, hcrd.z);
+      }
+    }
   }
 
 } // ::osc

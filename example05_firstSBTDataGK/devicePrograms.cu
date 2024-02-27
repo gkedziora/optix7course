@@ -81,6 +81,20 @@ namespace osc {
     const float cosDN  = 0.2f + .8f*fabsf(dot(rayDir,Ng));
     vec3f &prd = *(vec3f*)getPRD<vec3f>();
     prd = cosDN * sbtData.color;
+
+    const float2 barycentrics = optixGetTriangleBarycentrics();
+
+    /*convert barycentric coordinate to world coordinate
+    P = A + u(B - A) + v(C - A)  = (1 - u - v) * A + u * B + v * C 
+    */
+
+    vec3f P_world=(1.0f - barycentrics.x - barycentrics.y)*A +
+                  barycentrics.x*B + barycentrics.y*C;
+
+    optixSetPayload_2(__float_as_uint(P_world.x));
+    optixSetPayload_3(__float_as_uint(P_world.y));
+    optixSetPayload_4(__float_as_uint(P_world.z));
+
   }
   
   extern "C" __global__ void __anyhit__radiance()
@@ -101,6 +115,9 @@ namespace osc {
     vec3f &prd = *(vec3f*)getPRD<vec3f>();
     // set to constant white as background color
     prd = vec3f(1.f);
+    optixSetPayload_2(0);
+    optixSetPayload_3(0);
+    optixSetPayload_4(0);
   }
 
   //------------------------------------------------------------------------------
@@ -132,6 +149,9 @@ namespace osc {
                              + (screen.x - 0.5f) * camera.horizontal
                              + (screen.y - 0.5f) * camera.vertical);
 
+    // closets hit coordinates in payload
+    uint32_t px, py, pz; 
+
     optixTrace(optixLaunchParams.traversable,
                camera.position,
                rayDir,
@@ -143,7 +163,7 @@ namespace osc {
                SURFACE_RAY_TYPE,             // SBT offset
                RAY_TYPE_COUNT,               // SBT stride
                SURFACE_RAY_TYPE,             // missSBTIndex 
-               u0, u1 );
+               u0, u1, px, py, pz);
 
     const int r = int(255.99f*pixelColorPRD.x);
     const int g = int(255.99f*pixelColorPRD.y);
@@ -157,6 +177,20 @@ namespace osc {
     // and write to frame buffer ...
     const uint32_t fbIndex = ix+iy*optixLaunchParams.frame.size.x;
     optixLaunchParams.frame.colorBuffer[fbIndex] = rgba;
+
+    //gk send closest hit coords back to host
+    float3 result;
+    result.x = __uint_as_float(px);
+    result.y = __uint_as_float(py);
+    result.z = __uint_as_float(pz);
+    // gk: below 3 lines is to reproduce image with shading using result and python script
+    //result.x=r;
+    //result.y=g;
+    //result.z=b;
+
+    const uint32_t whIndex = ix+iy*optixLaunchParams.world_hits.size.x;
+    optixLaunchParams.world_hits.hit_coord_buf[whIndex] = result;
+
   }
   
 } // ::osc

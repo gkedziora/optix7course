@@ -43,7 +43,9 @@ namespace osc {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
       
-    handle = glfwCreateWindow(1200, 800, title.c_str(), NULL, NULL);
+    //handle = glfwCreateWindow(1200, 800, title.c_str(), NULL, NULL);
+    std::cout << "gk: changing default size of GLFW window in GLFWindow\n";
+    handle = glfwCreateWindow(600, 400, title.c_str(), NULL, NULL);
     if (!handle) {
       glfwTerminate();
       exit(EXIT_FAILURE);

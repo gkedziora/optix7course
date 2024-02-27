@@ -4,4 +4,6 @@ cmake -B build -DCMAKE_INSTALL_PREFIX=/home/gkedzior/optix7course \
   -DOptiX_INCLUDE=/home/gkedzior/NVIDIA-OptiX-SDK-8.0.0-linux64-x86_64/include \
   -DOptiX_INSTALL_DIR=/home/gkedzior/NVIDIA-OptiX-SDK-8.0.0-linux64-x86_64/build \
   -DCMAKE_CXX_COMPILER=/usr/local/gcc123/bin/g++ \
-  -DCMAKE_C_COMPILER=/usr/local/gcc123/bin/gcc
+  -DCMAKE_C_COMPILER=/usr/local/gcc123/bin/gcc \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_INCLUDE_PATH=/usr/include/opencv4/opencv2

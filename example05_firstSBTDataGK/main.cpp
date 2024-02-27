@@ -31,24 +31,33 @@ namespace osc {
                  const float worldScale)
       : GLFCameraWindow(title,camera.from,camera.at,camera.up,worldScale),
         sample(model)
-    {
+    { 
+      std::cout << "gk: calling sample.setCamera in SampleWindow constructor\n";
       sample.setCamera(camera);
+      std::cout << "gk: back from sample.setCamera in SampleWindow constructor\n";
     }
     
     virtual void render() override
     {
       if (cameraFrame.modified) {
+        std::cout << "gk: calling sample.setCamera in SampleWindow::render\n";
         sample.setCamera(Camera{ cameraFrame.get_from(),
                                  cameraFrame.get_at(),
                                  cameraFrame.get_up() });
+        std::cout << "gk: back from sample.setCamera in SampleWindow::render\n";
         cameraFrame.modified = false;
+        //gk: moved render here to not be overwhelmed with prinout data and hit position data
+        //gk: moving the image in the window will call this again
+        sample.render();
+        sample.downloadHitCoords(hit_coords.data());
       }
-      sample.render();
+      //gk debug: sample.render();
     }
     
     virtual void draw() override
     {
       sample.downloadPixels(pixels.data());
+
       if (fbTexture == 0)
         glGenTextures(1, &fbTexture);
       
@@ -99,12 +108,14 @@ namespace osc {
       fbSize = newSize;
       sample.resize(newSize);
       pixels.resize(newSize.x*newSize.y);
+      hit_coords.resize(newSize.x*newSize.y);
     }
 
     vec2i                 fbSize;
     GLuint                fbTexture {0};
     SampleRenderer        sample;
     std::vector<uint32_t> pixels;
+    std::vector<float3>   hit_coords;
   };
   
   
@@ -130,6 +141,9 @@ namespace osc {
       SampleWindow *window = new SampleWindow("Optix 7 Course Example",
                                               model,camera,worldScale);
       window->run();
+      //std::cout << "gk: calling SampleRenderer->render() in main";
+      //window->render();
+      //std::cout << "gk: back from SampleRenderer->render()";
       
     } catch (std::runtime_error& e) {
       std::cout << GDT_TERMINAL_RED << "FATAL ERROR: " << e.what()
